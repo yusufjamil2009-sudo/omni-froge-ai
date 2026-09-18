@@ -153,6 +153,7 @@ export const PENDING_INTEGRATIONS: Capability[] = [
   { id: "live-preview", label: "Live Preview", status: "available", note: "Implemented in PART 13; responsive preview controls and project source integration" },
   { id: "project-runtime", label: "Project Sandbox + Runtime", status: "available", note: "Implemented in PART 14; Docker-isolated npm install/build/runtime for supported Node web projects, plus browser fallback and lifecycle diagnostics" },
   { id: "github", label: "GitHub", status: "available", note: "Implemented in PART 15: OAuth connection, repository listing, branch/file sync and Git data push foundation" },
+  { id: "databases", label: "Supabase / Turso / Convex / Appwrite", status: "available", note: "Implemented in PART 16; secure server-side connection tests and environment-backed provider configuration" },
   { id: "deployment", label: "Vercel / Netlify", status: "pending", note: "Arrives in PART 18" },
 ];
 
