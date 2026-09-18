@@ -3,6 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { ArrowLeft, FileCode2 } from "lucide-react";
 
 import { ActivityPanel } from "@/components/omnifrog/activity-panel";
+import { LiveActivityConsole } from "@/components/omnifrog/live-activity-console";
 import { PreviewPanel } from "@/components/omnifrog/preview-panel";
 import { StatusBadge } from "@/components/omnifrog/status-badge";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,11 @@ export const Route = createFileRoute("/_workspace/projects/$projectId")({
 
 function ProjectDetailScreen() {
   const { projectId } = Route.useParams();
-  const { data } = useSuspenseQuery(projectQuery(projectId));
+  const { data } = useSuspenseQuery({
+    ...projectQuery(projectId),
+    refetchInterval: 1500,
+    refetchIntervalInBackground: true,
+  });
 
   if (!data) {
     return (
@@ -102,10 +107,7 @@ function ProjectDetailScreen() {
         <PreviewPanel preview={project.preview} className="min-w-0" />
       </div>
 
-      <ActivityPanel
-        events={activity}
-        emptyMessage="No activity recorded for this project yet."
-      />
+      <LiveActivityConsole events={activity} />
     </div>
   );
 }
