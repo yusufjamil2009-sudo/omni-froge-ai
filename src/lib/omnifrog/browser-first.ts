@@ -6,6 +6,7 @@
  */
 
 import { generateBrowserAi, type BrowserAiProgress } from "./browser-ai";
+import { getBrowserModel } from "./browser-models";
 import { routeAiRequestFn } from "../router.functions";
 import type { RouterResult } from "./router.server";
 
@@ -27,11 +28,14 @@ export async function runBrowserFirstAi(input: {
   maxTokens?: number;
   onProgress?: (progress: BrowserAiProgress) => void;
 }): Promise<BrowserFirstResult> {
+  const requestedLocalModel = input.model && getBrowserModel(input.model) ? input.model : undefined;
+
   const local = await generateBrowserAi({
     prompt: input.prompt,
     system: input.system,
     temperature: input.temperature,
     maxTokens: input.maxTokens,
+    modelId: requestedLocalModel,
     // Part 04 only selects the local default model. API model selection remains
     // owned by Part 03 when the fallback path is used.
     onProgress: input.onProgress,
