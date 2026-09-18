@@ -74,3 +74,24 @@ export const createBuildRequest = createServerFn({ method: "POST" })
       };
     }
   });
+
+
+export const saveUiBlueprint = createServerFn({ method: "POST" })
+  .inputValidator((input: { id: string; blueprint: unknown; source: string }) => {
+    if (typeof input?.id !== "string" || input.id.length === 0) throw new Error("Invalid project.");
+    if (input.source !== "browser" && input.source !== "api-fallback") throw new Error("Invalid generation source.");
+    return { id: input.id, blueprint: input.blueprint, source: input.source };
+  })
+  .handler(async ({ data }) => {
+    await guard();
+    const { updateProjectBuildState, logActivity } = await import("./omnifrog/projects.server");
+    await updateProjectBuildState(data.id, {
+      uiBlueprint: data.blueprint as never,
+      uiGenerationSource: data.source,
+      uiBlueprintGeneratedAt: new Date().toISOString(),
+    }, "BUILDING");
+    await logActivity(data.id, [
+      { level: "done", message: "UI blueprint generated and validated", operation: "ui.blueprint.generate" },
+    ]);
+    return { ok: true as const };
+  });
