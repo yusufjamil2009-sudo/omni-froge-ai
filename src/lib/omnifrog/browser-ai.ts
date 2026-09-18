@@ -66,7 +66,9 @@ type WebLLMModule = {
   ) => Promise<WebLLMEngine>;
 };
 
-const DEFAULT_MODEL_ID = "Llama-3.2-1B-Instruct-q4f32_1-MLC";
+import { DEFAULT_BROWSER_MODEL_ID } from "./browser-models";
+
+const DEFAULT_MODEL_ID = DEFAULT_BROWSER_MODEL_ID;
 const WEBLLM_URL = "https://esm.sh/@mlc-ai/web-llm@0.2.79";
 
 let runtimePromise: Promise<WebLLMModule> | null = null;
