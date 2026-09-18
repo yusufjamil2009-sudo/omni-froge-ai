@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Github, Link2, Loader2, LogOut, RefreshCw, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { disconnectGitHubAccount, getGitHubStatus, listGitHubRepos } from "@/lib/github.functions";
+import { getGitHubStatus, listGitHubRepos } from "@/lib/github.functions";
 
 export const Route = createFileRoute("/github")({ component: GitHubPage });
 
