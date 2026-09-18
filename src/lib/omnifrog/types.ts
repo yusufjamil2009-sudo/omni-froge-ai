@@ -69,6 +69,23 @@ export interface GeneratedFile {
   reason: string;
 }
 
+export type BuildCheckSeverity = "error" | "warning" | "info";
+export interface BuildCheck {
+  id: string;
+  severity: BuildCheckSeverity;
+  message: string;
+  filePath: string | null;
+}
+export interface BuildTestReport {
+  passed: boolean;
+  checks: BuildCheck[];
+  testedAt: string;
+  fileCount: number;
+  errorCount: number;
+  warningCount: number;
+  repairAttempts: number;
+}
+
 export interface CodingPlan {
   summary: string;
   files: GeneratedFile[];
