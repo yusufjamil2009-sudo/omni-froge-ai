@@ -155,7 +155,7 @@ export const PENDING_INTEGRATIONS: Capability[] = [
   { id: "github", label: "GitHub", status: "available", note: "Implemented in PART 15: OAuth connection, repository listing, branch/file sync and Git data push foundation" },
   { id: "databases", label: "Supabase / Turso / Convex / Appwrite", status: "available", note: "Implemented in PART 16; secure server-side connection tests and environment-backed provider configuration" },
   { id: "project-memory", label: "Project Memory + Long/Complex Context", status: "available", note: "Implemented in PART 17; persistent project memory, retrieval, bounded context injection and memory management" },
-  { id: "deployment", label: "Vercel / Netlify", status: "pending", note: "Arrives in PART 18" },
+  { id: "deployment", label: "Vercel / Netlify", status: "available", note: "Implemented in PART 18; authenticated deployment engine with provider-specific CLI execution and persisted status/logs" },
 ];
 
 /* ------------------------------------------------------------------ PART 02 */
