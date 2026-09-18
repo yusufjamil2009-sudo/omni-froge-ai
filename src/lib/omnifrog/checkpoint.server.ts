@@ -37,7 +37,7 @@ export function createCheckpoint(input: {
   const results = input.results ?? [];
   const completed = results.filter((r) => r.ok).map((r) => r.task.agentId);
   const failed = results.filter((r) => !r.ok && r.task.status === "FAILED").map((r) => r.task.agentId);
-  const rateLimited = results.filter((r) => r.task.status === "FAILED" && r.error?.toLowerCase().includes("rate")).map((r) => r.task.agentId);
+  const rateLimited = results.filter((r) => (r.output?.["errorClass"] === "RATE_LIMITED") || r.error?.toLowerCase().includes("rate limit")).map((r) => r.task.agentId);
   const done = new Set([...completed, ...failed]);
   const now = new Date().toISOString();
 
@@ -52,7 +52,7 @@ export function createCheckpoint(input: {
     pendingAgentIds: input.agentIds.filter((id) => !done.has(id)),
     failedAgentIds: failed,
     rateLimitedAgentIds: rateLimited,
-    providerHandoffs: {},
+    providerHandoffs: Object.fromEntries(results.filter((r) => r.output?.["errorClass"] === "RATE_LIMITED" && typeof r.output?.["providerId"] === "string").map((r) => [r.task.agentId, { providerId: String(r.output?.["providerId"]), retryAfter: null, reason: r.error ?? "Provider rate limited." }])),
     results: Object.fromEntries(results.map((r) => [r.task.agentId, {
       ok: r.ok,
       output: r.output,
