@@ -97,6 +97,46 @@ export const saveUiBlueprint = createServerFn({ method: "POST" })
   });
 
 
+export const runBuildTestRepair = createServerFn({ method: "POST" })
+  .inputValidator((input: { id: string; request: string; changes: unknown[]; maxRepairAttempts?: number }) => {
+    if (typeof input?.id !== "string" || input.id.length === 0) throw new Error("Invalid project.");
+    if (typeof input?.request !== "string" || input.request.trim().length < 3) throw new Error("Invalid build request.");
+    if (!Array.isArray(input.changes)) throw new Error("Invalid coding changes.");
+    return { id: input.id, request: input.request, changes: input.changes, maxRepairAttempts: input.maxRepairAttempts };
+  })
+  .handler(async ({ data }) => {
+    await guard();
+    const { applyGeneratedFiles } = await import("./omnifrog/file-editor.server");
+    const { applyProjectFiles, logLiveActivity, selectProject } = await import("./omnifrog/projects.server");
+    const { testAndRepairProject } = await import("./omnifrog/build-test-repair.server");
+    const existing = await selectProject(data.id);
+    if (!existing) throw new Error("Project not found.");
+    const changes = data.changes as Array<{path:string;operation:"create"|"update"|"delete";language:string;content:string;reason:string}>;
+    const sourceMap = new Map<string,string>();
+    const stored = existing.project.buildState.generatedSourceFiles;
+    if (Array.isArray(stored)) {
+      for (const item of stored as Array<{path?:string;content?:string}>) {
+        if (item.path && typeof item.content === "string") sourceMap.set(item.path, item.content);
+      }
+    }
+    for (const change of changes) {
+      if (change.operation === "delete") sourceMap.delete(change.path);
+      else sourceMap.set(change.path, change.content);
+    }
+    const sourceFiles = [...sourceMap.entries()].map(([path,content]) => ({path,content}));
+    await logLiveActivity({projectId:data.id,level:"active",message:"Build test/debug/repair pipeline started",operation:"build.pipeline.start",details:{fileCount:sourceFiles.length}}).catch(()=>undefined);
+    const result = await testAndRepairProject({
+      projectId:data.id,
+      files: sourceFiles,
+      originalRequest: data.request,
+      maxRepairAttempts: data.maxRepairAttempts ?? 3,
+    });
+    const projectFiles = applyGeneratedFiles(existing.project.files, changes.filter((c)=>c.operation !== "delete") as never);
+    await applyProjectFiles(data.id, result.files.map((file)=>({path:file.path,size:new TextEncoder().encode(file.content).byteLength,updatedAt:new Date().toISOString()})));
+    await logLiveActivity({projectId:data.id,level:result.report.passed?"done":"error",message:result.report.passed?"Build pipeline completed successfully":"Build pipeline stopped with unresolved errors",operation:"build.pipeline.complete",details:{errors:result.report.errorCount,warnings:result.report.warningCount,repairs:result.report.repairAttempts}}).catch(()=>undefined);
+    return { ok: true as const, report: result.report, source: result.source, fileCount: result.files.length };
+  });
+
 export const applyCodingPlan = createServerFn({ method: "POST" })
   .inputValidator((input: { id: string; changes: unknown[] }) => {
     if (typeof input?.id !== "string" || input.id.length === 0) throw new Error("Invalid project.");
