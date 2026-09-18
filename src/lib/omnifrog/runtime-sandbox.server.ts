@@ -103,7 +103,7 @@ async function dockerRun(runtime: SandboxRuntime, workdir: string, args: string[
   const mount = `${workdir}:/workspace`;
   const result = await command("docker", [
     "run", "--rm", "--network=bridge", "--cpus=2", "--memory=2g", "--pids-limit=256",
-    "--read-only", "--tmpfs", "/tmp:rw,noexec,nosuid,size=512m",
+    "--read-only", "--tmpfs", "/tmp:rw,noexec,nosuid,size=512m", "--tmpfs", "/root/.npm:rw,nosuid,size=512m",
     "-v", mount, "-w", "/workspace", "node:22-alpine", "sh", "-lc", args.join(" ")
   ], process.cwd(), timeout);
   appendLog(runtime, result.stdout);
