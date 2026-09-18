@@ -34,7 +34,7 @@ export interface RouterResult {
 
 function eligible(providers: ProviderConfig[], requestedModel: string | null): ProviderConfig[] {
   return providers
-    .filter((p) => p.enabled && p.configured && p.fallbackEligible && p.category === "ai")
+    .filter((p) => p.enabled && p.configured && p.category === "ai")
     .filter((p) => !requestedModel || p.models.some((m) => m.id === requestedModel) || p.selectedModel === requestedModel)
     .sort((a, b) => Number(b.isDefault) - Number(a.isDefault) || a.priority - b.priority);
 }
