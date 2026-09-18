@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Database } from "lucide-react";
 
 export const Route = createFileRoute("/_workspace/settings")({
   head: () => ({
@@ -22,6 +22,7 @@ function SettingsLayout() {
           Sections marked for a later part show their real state — no connections are faked.
         </p>
       </header>
+      <Link to="/settings/databases" className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm hover:bg-secondary"><Database className="size-4" /> Database Connections</Link>
       <Outlet />
     </div>
   );
