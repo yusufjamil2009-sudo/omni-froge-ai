@@ -146,6 +146,7 @@ export const PENDING_INTEGRATIONS: Capability[] = [
   { id: "parallel-agents", label: "Parallel 36-Agent Execution Engine", status: "available", note: "Implemented in PART 09; concurrently executes up to 36 unique specialized agents with isolated failures" },
   { id: "checkpoint-resume", label: "Checkpoint + Resume + Rate-Limit Handoff", status: "available", note: "Implemented in PART 10; persists unfinished agent state and resumes only eligible work" },
   { id: "live-activity", label: "Live Agent Activity + File/Code Progress Console", status: "available", note: "Implemented in PART 11; streams persisted agent lifecycle, progress, and file operation events" },
+  { id: "build-test-repair", label: "Build + Test + Debug + Automatic Repair", status: "available", note: "Implemented in PART 12; runs deterministic build preflight checks and bounded AI repair attempts" },
   { id: "live-preview", label: "Live Preview", status: "pending", note: "Arrives in PART 13" },
   { id: "github", label: "GitHub", status: "pending", note: "Arrives in PART 15" },
   { id: "deployment", label: "Vercel / Netlify", status: "pending", note: "Arrives in PART 18" },
