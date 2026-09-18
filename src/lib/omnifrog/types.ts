@@ -125,6 +125,7 @@ export const PENDING_INTEGRATIONS: Capability[] = [
   { id: "ui-generation", label: "AI UI / Website Generation Engine", status: "available", note: "Implemented in PART 05; generates and validates framework-neutral UI blueprints" },
   { id: "coding-engine", label: "Coding Engine", status: "available", note: "Implemented in PART 06; validated coding/file plans and authenticated file-index application" },
   { id: "agents", label: "Agent Fleet", status: "available", note: "Implemented in PART 07; exactly 36 individual specialized agents with task contracts" },
+  { id: "supervisor", label: "Supervisor Agent", status: "available", note: "Implemented in PART 08; validates delegation plans and executes assigned agents sequentially" },
   { id: "live-preview", label: "Live Preview", status: "pending", note: "Arrives in PART 13" },
   { id: "github", label: "GitHub", status: "pending", note: "Arrives in PART 15" },
   { id: "deployment", label: "Vercel / Netlify", status: "pending", note: "Arrives in PART 18" },
