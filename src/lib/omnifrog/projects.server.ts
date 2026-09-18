@@ -33,6 +33,12 @@ function toProject(row: Row): Project {
       url: (row["preview_url"] as string | null) ?? null,
       deploymentUrl: (row["deployment_url"] as string | null) ?? null,
     },
+    previewFiles: Array.isArray((row["build_state"] as Record<string, unknown> | null)?.["generatedSourceFiles"])
+      ? ((row["build_state"] as Record<string, unknown>)["generatedSourceFiles"] as Array<{ path?: string; content?: string }>)
+          .filter((file) => typeof file.path === "string" && typeof file.content === "string")
+          .map((file) => ({ path: file.path as string, content: file.content as string }))
+          .slice(0, 120)
+      : [],
     files: ((row["files"] as ProjectFile[] | null) ?? []) as ProjectFile[],
     createdAt: String(row["created_at"]),
     updatedAt: String(row["updated_at"]),
