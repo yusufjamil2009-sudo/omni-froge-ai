@@ -34,7 +34,7 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { to: "/build", label: "New Build", icon: Sparkles },
   { to: "/projects", label: "Projects", icon: FolderKanban },
-  { to: "/preview", label: "Live Preview", icon: MonitorPlay, hint: "Later part" },
+  { to: "/preview", label: "Live Preview", icon: MonitorPlay },
   { to: "/activity", label: "Build Activity", icon: Activity },
   { to: "/settings", label: "Settings", icon: SettingsIcon },
 ];
