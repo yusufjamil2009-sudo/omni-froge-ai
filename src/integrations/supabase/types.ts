@@ -14,7 +14,101 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      omnifrog_activity: {
+        Row: {
+          agent_id: string | null
+          agent_name: string | null
+          created_at: string
+          details: Json
+          file_path: string | null
+          id: string
+          level: string
+          message: string
+          model: string | null
+          operation: string | null
+          project_id: string
+          provider: string | null
+        }
+        Insert: {
+          agent_id?: string | null
+          agent_name?: string | null
+          created_at?: string
+          details?: Json
+          file_path?: string | null
+          id?: string
+          level?: string
+          message: string
+          model?: string | null
+          operation?: string | null
+          project_id: string
+          provider?: string | null
+        }
+        Update: {
+          agent_id?: string | null
+          agent_name?: string | null
+          created_at?: string
+          details?: Json
+          file_path?: string | null
+          id?: string
+          level?: string
+          message?: string
+          model?: string | null
+          operation?: string | null
+          project_id?: string
+          provider?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "omnifrog_activity_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "omnifrog_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      omnifrog_projects: {
+        Row: {
+          build_state: Json
+          created_at: string
+          deployment_url: string | null
+          files: Json
+          id: string
+          name: string
+          preview_state: Json
+          preview_url: string | null
+          request: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          build_state?: Json
+          created_at?: string
+          deployment_url?: string | null
+          files?: Json
+          id?: string
+          name: string
+          preview_state?: Json
+          preview_url?: string | null
+          request: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          build_state?: Json
+          created_at?: string
+          deployment_url?: string | null
+          files?: Json
+          id?: string
+          name?: string
+          preview_state?: Json
+          preview_url?: string | null
+          request?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
