@@ -146,3 +146,25 @@ export async function selectRecentActivity(limit = 50): Promise<ActivityEvent[]>
   if (error) throw new Error(error.message);
   return ((data ?? []) as Row[]).map(toEvent);
 }
+
+
+export async function updateProjectBuildState(
+  id: string,
+  patch: Record<string, JsonValue>,
+  status?: BuildState,
+): Promise<void> {
+  const client = await db();
+  const { data: current, error: readError } = await client
+    .from("omnifrog_projects")
+    .select("build_state")
+    .eq("id", id)
+    .single();
+  if (readError) throw new Error(readError.message);
+  const currentState = (current?.build_state as Record<string, JsonValue> | null) ?? {};
+  const update: Record<string, unknown> = {
+    build_state: { ...currentState, ...patch },
+  };
+  if (status) update.status = status;
+  const { error } = await client.from("omnifrog_projects").update(update).eq("id", id);
+  if (error) throw new Error(error.message);
+}
