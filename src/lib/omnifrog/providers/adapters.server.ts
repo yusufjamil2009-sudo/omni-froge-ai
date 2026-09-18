@@ -21,9 +21,18 @@ export interface AdapterTestResult {
   retryAfterSeconds?: number | null;
 }
 
+export interface AdapterGenerateResult {
+  ok: boolean;
+  text?: string;
+  errorClass?: ProviderErrorClass;
+  reason?: string;
+  retryAfterSeconds?: number | null;
+}
+
 export interface ProviderAdapter {
   listModels?(credentials: Record<string, string>): Promise<ModelInfo[]>;
   test?(credentials: Record<string, string>, model: string | null): Promise<AdapterTestResult>;
+  generate?(credentials: Record<string, string>, input: { model: string; prompt: string; system: string | null; temperature?: number; maxTokens?: number }): Promise<AdapterGenerateResult>;
 }
 
 const TIMEOUT_MS = 15000;
@@ -148,6 +157,27 @@ function openAiCompatible(id: string, { baseUrl, headers }: OpenAICompatible): P
       }
       return { ok: true };
     },
+    async generate(credentials, input) {
+      const result = await request(`${baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...headers(credentials) },
+        body: JSON.stringify({
+          model: input.model,
+          messages: [
+            ...(input.system ? [{ role: "system", content: input.system }] : []),
+            { role: "user", content: input.prompt },
+          ],
+          ...(typeof input.temperature === "number" ? { temperature: input.temperature } : {}),
+          ...(typeof input.maxTokens === "number" ? { max_tokens: input.maxTokens } : {}),
+        }),
+      });
+      if ("networkError" in result) return networkFailure();
+      if (!result.ok) return { ok:false, ...classify(result.status, result.body), retryAfterSeconds: retryAfter(result.body) };
+      const parsed = parseJson(result.body) as { choices?: Array<{ message?: { content?: unknown } }> } | null;
+      const text = parsed?.choices?.[0]?.message?.content;
+      if (typeof text !== "string" || !text.trim()) return { ok:false, errorClass:"INVALID_RESPONSE", reason:"Provider returned no usable text." };
+      return { ok:true, text };
+    },
   };
 }
 
@@ -229,6 +259,26 @@ export const ADAPTERS: Record<string, ProviderAdapter> = {
       }
       return { ok: true };
     },
+    async generate(credentials, input) {
+      const result = await request(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(input.model)}:generateContent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": credentials["apiKey"] ?? "" },
+        body: JSON.stringify({
+          ...(input.system ? { systemInstruction: { parts: [{ text: input.system }] } } : {}),
+          contents: [{ role: "user", parts: [{ text: input.prompt }] }],
+          generationConfig: {
+            ...(typeof input.temperature === "number" ? { temperature: input.temperature } : {}),
+            ...(typeof input.maxTokens === "number" ? { maxOutputTokens: input.maxTokens } : {}),
+          },
+        }),
+      });
+      if ("networkError" in result) return networkFailure();
+      if (!result.ok) return { ok:false, ...classify(result.status, result.body), retryAfterSeconds: retryAfter(result.body) };
+      const parsed = parseJson(result.body) as { candidates?: Array<{ content?: { parts?: Array<{ text?: unknown }> } }> } | null;
+      const text = parsed?.candidates?.[0]?.content?.parts?.map((p) => typeof p.text === "string" ? p.text : "").join("") ?? "";
+      if (!text.trim()) return { ok:false, errorClass:"INVALID_RESPONSE", reason:"Provider returned no usable text." };
+      return { ok:true, text };
+    },
   },
 
   anthropic: {
@@ -275,6 +325,25 @@ export const ADAPTERS: Record<string, ProviderAdapter> = {
         return { ok: false, ...classify(result.status, result.body), retryAfterSeconds: retryAfter(result.body) };
       }
       return { ok: true };
+    },
+    async generate(credentials, input) {
+      const result = await request("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": credentials["apiKey"] ?? "", "anthropic-version": "2023-06-01" },
+        body: JSON.stringify({
+          model: input.model,
+          max_tokens: input.maxTokens ?? 1024,
+          ...(input.system ? { system: input.system } : {}),
+          messages: [{ role: "user", content: input.prompt }],
+          ...(typeof input.temperature === "number" ? { temperature: input.temperature } : {}),
+        }),
+      });
+      if ("networkError" in result) return networkFailure();
+      if (!result.ok) return { ok:false, ...classify(result.status, result.body), retryAfterSeconds: retryAfter(result.body) };
+      const parsed = parseJson(result.body) as { content?: Array<{ type?: string; text?: unknown }> } | null;
+      const text = parsed?.content?.filter((p) => p.type === "text").map((p) => typeof p.text === "string" ? p.text : "").join("") ?? "";
+      if (!text.trim()) return { ok:false, errorClass:"INVALID_RESPONSE", reason:"Provider returned no usable text." };
+      return { ok:true, text };
     },
   },
 
