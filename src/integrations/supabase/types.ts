@@ -119,6 +119,7 @@ export type Database = {
           credential_hint: Json
           credential_ref: string | null
           enabled: boolean
+          fallback_eligible: boolean
           is_default: boolean
           last_error: Json | null
           last_tested_at: string | null
@@ -140,6 +141,7 @@ export type Database = {
           credential_hint?: Json
           credential_ref?: string | null
           enabled?: boolean
+          fallback_eligible?: boolean
           is_default?: boolean
           last_error?: Json | null
           last_tested_at?: string | null
@@ -161,6 +163,7 @@ export type Database = {
           credential_hint?: Json
           credential_ref?: string | null
           enabled?: boolean
+          fallback_eligible?: boolean
           is_default?: boolean
           last_error?: Json | null
           last_tested_at?: string | null
