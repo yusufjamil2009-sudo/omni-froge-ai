@@ -25,7 +25,7 @@ import { getAccessState, lock } from "@/lib/auth.functions";
 import { cn } from "@/lib/utils";
 
 type NavItem = {
-  to: LinkProps["to"];
+  to: NonNullable<LinkProps["to"]>;
   label: string;
   icon: typeof Sparkles;
   hint?: string;
