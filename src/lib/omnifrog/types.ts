@@ -54,6 +54,27 @@ export interface ActivityEvent {
   createdAt: string;
 }
 
+/**
+ * PART 06 coding/file-engine contracts. These are intentionally framework-neutral
+ * and keep generated file contents separate from the existing project file index.
+ */
+export type FileOperation = "create" | "update" | "delete";
+export type FileLanguage = "typescript" | "javascript" | "tsx" | "jsx" | "css" | "html" | "json" | "markdown" | "text" | "other";
+
+export interface GeneratedFile {
+  path: string;
+  operation: FileOperation;
+  language: FileLanguage;
+  content: string;
+  reason: string;
+}
+
+export interface CodingPlan {
+  summary: string;
+  files: GeneratedFile[];
+  checks: string[];
+}
+
 /** Reserved for PART 06 coding engine / PART 14 sandbox. */
 export interface ProjectFile {
   path: string;
