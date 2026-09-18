@@ -1,5 +1,6 @@
 import { runBrowserFirstAi } from "./browser-first";
 import { getAgent, type AgentTask } from "./agents";
+import { logLiveActivity } from "./projects.server";
 
 export async function executeAgentTask(input: {
   task: AgentTask;
@@ -16,6 +17,8 @@ structured result with: summary, findings, actions, risks.
 Do not claim to have edited files, run commands, tested code, or accessed tools
 unless the caller explicitly supplied evidence of those actions. Do not invent secrets.`;
 
+  await logLiveActivity({ projectId: input.task.projectId, level: "active", message: `${agent.name} started`, agentId: agent.id, agentName: agent.name, operation: "agent.start" }).catch(() => undefined);
+
   const result = await runBrowserFirstAi({
     prompt: JSON.stringify({ instruction: input.task.instruction, input: input.task.input }),
     system,
@@ -24,8 +27,31 @@ unless the caller explicitly supplied evidence of those actions. Do not invent s
   });
 
   if (!result.ok || !result.text) {
+    await logLiveActivity({
+      projectId: input.task.projectId,
+      level: "error",
+      message: `${agent.name} failed`,
+      agentId: agent.id,
+      agentName: agent.name,
+      operation: "agent.failed",
+      provider: result.apiResult?.attempts?.[result.apiResult.attempts.length - 1]?.providerId ?? null,
+      model: result.apiResult?.attempts?.[result.apiResult.attempts.length - 1]?.model ?? null,
+      details: { source: result.source },
+    }).catch(() => undefined);
     return { ok: false as const, output: null, source: result.source, error: result.browserError ?? "Agent execution failed." };
   }
+
+  await logLiveActivity({
+    projectId: input.task.projectId,
+    level: "done",
+    message: `${agent.name} completed`,
+    agentId: agent.id,
+    agentName: agent.name,
+    operation: "agent.complete",
+    provider: result.apiResult?.attempts?.[result.apiResult.attempts.length - 1]?.providerId ?? null,
+    model: result.apiResult?.attempts?.[result.apiResult.attempts.length - 1]?.model ?? null,
+    details: { source: result.source, durationMs: 0 },
+  }).catch(() => undefined);
 
   return {
     ok: true as const,
