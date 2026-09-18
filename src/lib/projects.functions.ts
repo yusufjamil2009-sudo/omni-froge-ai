@@ -95,3 +95,25 @@ export const saveUiBlueprint = createServerFn({ method: "POST" })
     ]);
     return { ok: true as const };
   });
+
+
+export const applyCodingPlan = createServerFn({ method: "POST" })
+  .inputValidator((input: { id: string; changes: unknown[] }) => {
+    if (typeof input?.id !== "string" || input.id.length === 0) throw new Error("Invalid project.");
+    if (!Array.isArray(input.changes)) throw new Error("Invalid coding changes.");
+    return { id: input.id, changes: input.changes };
+  })
+  .handler(async ({ data }) => {
+    await guard();
+    const { applyGeneratedFiles } = await import("./omnifrog/file-editor.server");
+    const { applyProjectFiles, logActivity, selectProject } = await import("./omnifrog/projects.server");
+    const existing = await selectProject(data.id);
+    if (!existing) throw new Error("Project not found.");
+    const changes = data.changes as never[];
+    const files = applyGeneratedFiles(existing.project.files, changes as never);
+    await applyProjectFiles(data.id, files);
+    await logActivity(data.id, [
+      { level: "done", message: `Applied ${changes.length} validated file operation(s)`, operation: "file.apply" },
+    ]);
+    return { ok: true as const, fileCount: files.length };
+  });
