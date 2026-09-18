@@ -10,13 +10,14 @@ export function PreviewPanel({ preview, previewFiles, className }:{preview:Previ
  const [fullscreen,setFullscreen]=useState(false);
  const [status,setStatus]=useState<RuntimeStatus>("IDLE");
  const [revision,setRevision]=useState(0);
+ const [running,setRunning]=useState(true);
  const [diagnostic,setDiagnostic]=useState<string|null>(null);
  const manifest=useMemo(()=>createRuntimeManifest(previewFiles),[previewFiles]);
  const srcDoc=useMemo(()=>buildRuntimeDocument(previewFiles),[previewFiles,revision]);
  useEffect(()=>{setStatus(srcDoc?"STARTING":"IDLE");setDiagnostic(manifest.diagnostics.find(d=>d.level==="error")?.message??null);},[srcDoc,manifest]);
  useEffect(()=>{const onMessage=(event:MessageEvent)=>{if(event.data?.source!=="omnifrog-runtime")return;if(event.data.type==="ready"){setStatus("RUNNING");setDiagnostic(null);}if(event.data.type==="error"){setStatus("ERROR");setDiagnostic(String(event.data.payload?.message??"Runtime error"));}if(event.data.type==="console"&&event.data.payload?.level==="error"){setStatus("ERROR");setDiagnostic(String(event.data.payload?.message??"Runtime error"));}};window.addEventListener("message",onMessage);return()=>window.removeEventListener("message",onMessage);},[]);
- const reload=()=>{setDiagnostic(null);setStatus(srcDoc?"STARTING":"IDLE");setRevision(v=>v+1)};
- const stop=()=>{setStatus("STOPPED");setRevision(v=>v+1)};
+ const reload=()=>{setDiagnostic(null);setRunning(true);setStatus(srcDoc?"STARTING":"IDLE");setRevision(v=>v+1)};
+ const stop=()=>{setRunning(false);setStatus("STOPPED")};
  return <section className={cn("soft-panel flex min-w-0 flex-col rounded-xl",fullscreen&&"fixed inset-2 z-50 bg-background shadow-2xl sm:inset-6",className)}>
   <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border p-3 sm:p-4">
    <div><h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Live Preview Runtime</h2><p className="mt-1 text-[11px] text-muted-foreground">{status} · {manifest.kind}{manifest.framework ? " · "+manifest.framework : ""}</p></div>
