@@ -100,7 +100,8 @@ export interface Capability {
 
 export const PENDING_INTEGRATIONS: Capability[] = [
   { id: "model-router", label: "AI Model Router", status: "available", note: "Implemented in PART 03" },
-  { id: "browser-ai", label: "Browser / Open-Source AI First Engine", status: "available", note: "Implemented in PART 04; WebGPU-capable browsers can run the local open-source model first" },
+  { id: "browser-ai", label: "Browser / Open-Source AI First Engine", status: "available", note: "Implemented in PART 04; WebGPU-capable browsers can run local open-source models first" },
+  { id: "ui-generation", label: "AI UI / Website Generation Engine", status: "available", note: "Implemented in PART 05; generates and validates framework-neutral UI blueprints" },
   { id: "coding-engine", label: "Coding Engine", status: "pending", note: "Arrives in PART 06" },
   { id: "agents", label: "Agent Fleet", status: "pending", note: "Arrives in PART 07" },
   { id: "live-preview", label: "Live Preview", status: "pending", note: "Arrives in PART 13" },
