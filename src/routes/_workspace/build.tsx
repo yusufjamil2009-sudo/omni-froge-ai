@@ -8,8 +8,9 @@ import { ActivityPanel } from "@/components/omnifrog/activity-panel";
 import { StatusBadge } from "@/components/omnifrog/status-badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { createBuildRequest, saveUiBlueprint } from "@/lib/projects.functions";
+import { createBuildRequest, runBuildTestRepair, saveUiBlueprint } from "@/lib/projects.functions";
 import { generateUiBlueprint } from "@/lib/omnifrog/ui-generation";
+import { generateCodingPlan } from "@/lib/omnifrog/coding-engine";
 import type { ActivityEvent, BuildState } from "@/lib/omnifrog/types";
 import { PENDING_INTEGRATIONS } from "@/lib/omnifrog/types";
 
@@ -63,7 +64,7 @@ function BuildScreen() {
   const [projectId, setProjectId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const busy = state === "UNDERSTANDING" || state === "PLANNING";
+  const busy = ["UNDERSTANDING","PLANNING","BUILDING","TESTING","FIXING"].includes(state);
 
   async function runBuildRequest() {
     const request = prompt.trim();
@@ -129,11 +130,39 @@ function BuildScreen() {
       });
 
       setState("BUILDING");
-      setEvents((current) => [
-        ...current.filter((event) => event.id !== "planner-progress"),
-        step("planner-done", "done", `UI blueprint ready via ${generated.source === "browser" ? "browser AI" : "API fallback"}`, "ui.blueprint.complete"),
-        step("file-engine", "pending", "Waiting for Universal Coding & File Editing Engine (PART 06)", "file.engine"),
-      ]);
+      setEvents((current) => [...current.filter((event) => event.id !== "planner-progress"),
+        step("planner-done","done",`UI blueprint ready via ${generated.source === "browser" ? "browser AI" : "API fallback"}`,"ui.blueprint.complete"),
+        step("coding-start","active","Generating validated project source files","coding.plan.start")]);
+
+      const coding = await generateCodingPlan({
+        request, blueprint: generated.blueprint,
+        onProgress: (progress) => setEvents((current) => [
+          ...current.filter((event) => event.id !== "coding-progress"),
+          step("coding-progress","active",progress.text || `Writing project files… ${Math.round(progress.progress * 100)}%`,"coding.plan.progress"),
+        ]),
+      });
+      if (!coding.ok || !coding.plan) {
+        setState("FAILED"); setError(coding.error ?? "Could not generate a valid coding plan."); return;
+      }
+
+      setState("TESTING");
+      setEvents((current) => [...current.filter((event) => event.id !== "coding-progress"),
+        step("coding-done","done",`Generated ${coding.plan.files.length} validated file operation(s)`,"coding.plan.complete"),
+        step("pipeline-start","active","Running build preflight, testing, debugging and automatic repair","build.pipeline.start")]);
+
+      const pipeline = await runBuildTestRepair({
+        data: { id: result.projectId, request, changes: coding.plan.files, maxRepairAttempts: 3 },
+      });
+      if (!pipeline.ok || !pipeline.report.passed) {
+        setState("FAILED");
+        setError(pipeline.report.checks.filter((check) => check.severity === "error").map((check) => check.message).join(" ") || "Build validation failed.");
+        return;
+      }
+
+      setState("COMPLETED");
+      setEvents((current) => [...current.filter((event) => event.id !== "coding-progress"),
+        step("coding-done","done",`Generated ${coding.plan.files.length} validated file operation(s)`,"coding.plan.complete"),
+        step("pipeline-done","done",`Build preflight passed; ${pipeline.report.repairAttempts} repair attempt(s)`,"build.pipeline.complete")]);
       await queryClient.invalidateQueries({ queryKey: ["omnifrog"] });
     } catch {
       setState("FAILED");
