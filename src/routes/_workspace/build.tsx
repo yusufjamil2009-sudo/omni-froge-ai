@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { createBuildRequest, runBuildTestRepair, saveUiBlueprint } from "@/lib/projects.functions";
 import { generateUiBlueprint } from "@/lib/omnifrog/ui-generation";
 import { generateCodingPlan } from "@/lib/omnifrog/coding-engine";
+import { addProjectMemory, getProjectMemory } from "@/lib/memory.functions";
 import type { ActivityEvent, BuildState } from "@/lib/omnifrog/types";
 import { PENDING_INTEGRATIONS } from "@/lib/omnifrog/types";
 
@@ -55,6 +56,8 @@ function step(
 function BuildScreen() {
   const submit = useServerFn(createBuildRequest);
   const saveBlueprint = useServerFn(saveUiBlueprint);
+  const saveMemory = useServerFn(addProjectMemory);
+  const loadMemory = useServerFn(getProjectMemory);
   const queryClient = useQueryClient();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -88,6 +91,10 @@ function BuildScreen() {
       }
 
       setProjectId(result.projectId);
+      await saveMemory({ data: { id: result.projectId, kind: "requirement", title: "Original build request", content: request, source: "build-request", importance: 100 } });
+      const memoryState = await loadMemory({ data: { id: result.projectId } });
+      const memoryContext = (memoryState.summary ? "Project memory summary:\n" + memoryState.summary + "\n\n" : "") + memoryState.items.slice(0, 12).map((item) => "[" + item.kind + "] " + item.title + "\n" + item.content).join("\n\n");
+      const requestWithMemory = memoryContext ? request + "\n\nPROJECT MEMORY — preserve these existing decisions and constraints:\n" + memoryContext : request;
       setEvents([
         step("received", "done", "Request received", "request.receive"),
         step("stored", "done", "Project request stored", "project.create"),
@@ -135,7 +142,7 @@ function BuildScreen() {
         step("coding-start","active","Generating validated project source files","coding.plan.start")]);
 
       const coding = await generateCodingPlan({
-        request, blueprint: generated.blueprint,
+        request: requestWithMemory, blueprint: generated.blueprint,
         onProgress: (progress) => setEvents((current) => [
           ...current.filter((event) => event.id !== "coding-progress"),
           step("coding-progress","active",progress.text || `Writing project files… ${Math.round(progress.progress * 100)}%`,"coding.plan.progress"),
@@ -151,7 +158,7 @@ function BuildScreen() {
         step("pipeline-start","active","Running build preflight, testing, debugging and automatic repair","build.pipeline.start")]);
 
       const pipeline = await runBuildTestRepair({
-        data: { id: result.projectId, request, changes: coding.plan.files, maxRepairAttempts: 3 },
+        data: { id: result.projectId, request: requestWithMemory, changes: coding.plan.files, maxRepairAttempts: 3 },
       });
       if (!pipeline.ok || !pipeline.report.passed) {
         setState("FAILED");
