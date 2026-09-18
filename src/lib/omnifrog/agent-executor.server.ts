@@ -19,6 +19,7 @@ unless the caller explicitly supplied evidence of those actions. Do not invent s
 
   await logLiveActivity({ projectId: input.task.projectId, level: "active", message: `${agent.name} started`, agentId: agent.id, agentName: agent.name, operation: "agent.start" }).catch(() => undefined);
 
+  const startedAt = Date.now();
   const result = await runBrowserFirstAi({
     prompt: JSON.stringify({ instruction: input.task.instruction, input: input.task.input }),
     system,
@@ -61,7 +62,7 @@ unless the caller explicitly supplied evidence of those actions. Do not invent s
     operation: "agent.complete",
     provider: result.apiResult?.attempts?.[result.apiResult.attempts.length - 1]?.providerId ?? null,
     model: result.apiResult?.attempts?.[result.apiResult.attempts.length - 1]?.model ?? null,
-    details: { source: result.source, durationMs: 0 },
+    details: { source: result.source, durationMs: Date.now() - startedAt },
   }).catch(() => undefined);
 
   return {
