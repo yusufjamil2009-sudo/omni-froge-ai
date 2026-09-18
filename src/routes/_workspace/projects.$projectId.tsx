@@ -104,7 +104,7 @@ function ProjectDetailScreen() {
           )}
         </section>
 
-        <PreviewPanel preview={project.preview} className="min-w-0" />
+        <PreviewPanel preview={project.preview} previewFiles={project.previewFiles} className="min-w-0" />
       </div>
 
       <LiveActivityConsole events={activity} />
