@@ -35,6 +35,8 @@ export const BUILD_STATE_LABELS: Record<BuildState, string> = {
 };
 
 /** Activity event levels rendered by the Build Activity panel. */
+export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+
 export type ActivityLevel = "done" | "active" | "pending" | "warning" | "error" | "info";
 
 export interface ActivityEvent {
@@ -51,7 +53,7 @@ export interface ActivityEvent {
   /** Reserved for PART 02/03 provider + model routing. */
   provider: string | null;
   model: string | null;
-  details: Record<string, unknown>;
+  details: Record<string, JsonValue>;
   createdAt: string;
 }
 
@@ -75,7 +77,7 @@ export interface Project {
   name: string;
   request: string;
   status: BuildState;
-  buildState: Record<string, unknown>;
+  buildState: Record<string, JsonValue>;
   preview: PreviewState;
   files: ProjectFile[];
   createdAt: string;

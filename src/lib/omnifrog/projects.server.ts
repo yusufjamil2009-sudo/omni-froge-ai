@@ -11,6 +11,7 @@ import type {
   Project,
   ProjectFile,
   ProjectSummary,
+  JsonValue,
 } from "./types";
 
 type Row = Record<string, unknown>;
@@ -26,7 +27,7 @@ function toProject(row: Row): Project {
     name: String(row["name"]),
     request: String(row["request"]),
     status: String(row["status"]) as BuildState,
-    buildState: (row["build_state"] as Record<string, unknown>) ?? {},
+    buildState: (row["build_state"] as Record<string, JsonValue>) ?? {},
     preview: {
       available: Boolean(row["preview_url"]),
       url: (row["preview_url"] as string | null) ?? null,
@@ -50,7 +51,7 @@ function toEvent(row: Row): ActivityEvent {
     operation: (row["operation"] as string | null) ?? null,
     provider: (row["provider"] as string | null) ?? null,
     model: (row["model"] as string | null) ?? null,
-    details: (row["details"] as Record<string, unknown>) ?? {},
+    details: (row["details"] as Record<string, JsonValue>) ?? {},
     createdAt: String(row["created_at"]),
   };
 }
