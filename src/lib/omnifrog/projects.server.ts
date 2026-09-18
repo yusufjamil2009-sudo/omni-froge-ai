@@ -70,7 +70,7 @@ export async function insertProject(request: string): Promise<Project> {
   const client = await db();
   const { data, error } = await client
     .from("omnifrog_projects")
-    .insert({ name: deriveProjectName(request), request, status: "UNDERSTANDING" })
+    .insert({ name: deriveProjectName(request), request, status: "PAUSED" })
     .select("*")
     .single();
   if (error) throw new Error(error.message);
