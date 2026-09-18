@@ -22,7 +22,7 @@ const COMMAND_TIMEOUT = 180_000;
 function safe(v: string) { return v.replace(/[^a-zA-Z0-9._-]/g, "-").slice(0, 80) || "omnifrog-project"; }
 function safePath(rel: string) {
   const normalized = rel.replace(/\\/g, "/");
-  if (!normalized || normalized.includes("..") || normalized.startsWith("/") || /(^|\\/)(node_modules|\\.git|\\.env(?:$|\\.))/i.test(normalized)) return false;
+  if (!normalized || normalized.includes("..") || normalized.startsWith("/") || /(^|\/)(node_modules|\.git|\.env(?:$|\.))/i.test(normalized)) return false;
   return true;
 }
 function extractUrl(text: string) {
