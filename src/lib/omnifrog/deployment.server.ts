@@ -74,7 +74,7 @@ export async function deployProject(input: {
     if (input.provider === "netlify") {
       if (!env.NETLIFY_AUTH_TOKEN) return { provider: input.provider, status: "ERROR", url: null, deployUrl: null, message: "NETLIFY_AUTH_TOKEN is not configured on the server.", logs: "" };
       cmd = "npx";
-      args = ["--yes", "netlify-cli", "deploy", "--dir", publishDir, "--auth", env.NETLIFY_AUTH_TOKEN];
+      args = ["--yes", "netlify-cli", "deploy", "--dir", publishDir];
       if (env.NETLIFY_SITE_ID) args.push("--site", env.NETLIFY_SITE_ID);
       else args.push("--site", safe(input.projectName));
       if (input.production) args.push("--prod");
@@ -82,7 +82,7 @@ export async function deployProject(input: {
     } else {
       if (!env.VERCEL_TOKEN) return { provider: input.provider, status: "ERROR", url: null, deployUrl: null, message: "VERCEL_TOKEN is not configured on the server.", logs: "" };
       cmd = "npx";
-      args = ["--yes", "vercel", publishDir, "--yes", "--token", env.VERCEL_TOKEN];
+      args = ["--yes", "vercel", publishDir, "--yes"];
       if (input.production) args.push("--prod");
     }
     const r = await exec(cmd, args, { cwd: dir, timeout: COMMAND_TIMEOUT, maxBuffer: 4 * 1024 * 1024, env });
