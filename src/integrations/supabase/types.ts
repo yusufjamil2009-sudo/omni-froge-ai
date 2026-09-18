@@ -109,6 +109,75 @@ export type Database = {
         }
         Relationships: []
       }
+      omnifrog_providers: {
+        Row: {
+          capabilities: Json
+          category: string
+          connection_status: string
+          created_at: string
+          credential_cipher: string | null
+          credential_hint: Json
+          credential_ref: string | null
+          enabled: boolean
+          fallback_eligible: boolean
+          is_default: boolean
+          last_error: Json | null
+          last_tested_at: string | null
+          models: Json
+          models_refreshed_at: string | null
+          priority: number
+          provider_id: string
+          provider_name: string
+          selected_model: string | null
+          updated_at: string
+          usage: Json
+        }
+        Insert: {
+          capabilities?: Json
+          category: string
+          connection_status?: string
+          created_at?: string
+          credential_cipher?: string | null
+          credential_hint?: Json
+          credential_ref?: string | null
+          enabled?: boolean
+          fallback_eligible?: boolean
+          is_default?: boolean
+          last_error?: Json | null
+          last_tested_at?: string | null
+          models?: Json
+          models_refreshed_at?: string | null
+          priority?: number
+          provider_id: string
+          provider_name: string
+          selected_model?: string | null
+          updated_at?: string
+          usage?: Json
+        }
+        Update: {
+          capabilities?: Json
+          category?: string
+          connection_status?: string
+          created_at?: string
+          credential_cipher?: string | null
+          credential_hint?: Json
+          credential_ref?: string | null
+          enabled?: boolean
+          fallback_eligible?: boolean
+          is_default?: boolean
+          last_error?: Json | null
+          last_tested_at?: string | null
+          models?: Json
+          models_refreshed_at?: string | null
+          priority?: number
+          provider_id?: string
+          provider_name?: string
+          selected_model?: string | null
+          updated_at?: string
+          usage?: Json
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

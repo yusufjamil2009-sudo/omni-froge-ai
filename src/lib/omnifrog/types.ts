@@ -102,7 +102,6 @@ export interface Capability {
 }
 
 export const PENDING_INTEGRATIONS: Capability[] = [
-  { id: "api-manager", label: "API Manager", status: "pending", note: "Arrives in PART 02" },
   { id: "model-router", label: "AI Model Router", status: "pending", note: "Arrives in PART 03" },
   { id: "coding-engine", label: "Coding Engine", status: "pending", note: "Arrives in PART 06" },
   { id: "agents", label: "Agent Fleet", status: "pending", note: "Arrives in PART 07" },
@@ -110,3 +109,89 @@ export const PENDING_INTEGRATIONS: Capability[] = [
   { id: "github", label: "GitHub", status: "pending", note: "Arrives in PART 15" },
   { id: "deployment", label: "Vercel / Netlify", status: "pending", note: "Arrives in PART 18" },
 ];
+
+/* ------------------------------------------------------------------ PART 02 */
+
+/** Provider connection statuses. Every value comes from real stored state. */
+export const PROVIDER_STATUSES = [
+  "NOT CONFIGURED",
+  "CONFIGURED",
+  "TESTING",
+  "WORKING",
+  "RATE LIMITED",
+  "AUTH ERROR",
+  "MODEL ERROR",
+  "UNAVAILABLE",
+  "DISABLED",
+] as const;
+
+export type ProviderStatus = (typeof PROVIDER_STATUSES)[number];
+
+/** Error classes recorded for the PART 03 router. */
+export type ProviderErrorClass =
+  | "INVALID_CREDENTIAL"
+  | "UNAUTHORIZED"
+  | "FORBIDDEN"
+  | "RATE_LIMITED"
+  | "TIMEOUT"
+  | "PROVIDER_UNAVAILABLE"
+  | "MODEL_UNAVAILABLE"
+  | "NETWORK_ERROR"
+  | "INVALID_RESPONSE"
+  | "UNKNOWN_ERROR";
+
+export interface ProviderFailure {
+  errorClass: ProviderErrorClass;
+  /** Sanitized reason — never a raw provider payload. */
+  reason: string;
+  at: string;
+  retryAfterSeconds: number | null;
+}
+
+/** Model metadata. Flags are only set from real provider metadata. */
+export interface ModelInfo {
+  id: string;
+  displayName: string;
+  provider: string;
+  reasoning: boolean;
+  vision: boolean;
+  image: boolean;
+  embeddings: boolean;
+  contextNote: string | null;
+}
+
+/** Usage counters, extensible for PART 03+ cost tracking. No invented pricing. */
+export interface ProviderUsage {
+  requests?: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  errors?: number;
+  rateLimits?: number;
+  lastUsedAt?: string | null;
+}
+
+/**
+ * Provider configuration as returned to the owner's UI.
+ * Contains NO credential values — only whether each field is set.
+ */
+export interface ProviderConfig {
+  id: string;
+  name: string;
+  category: string;
+  status: ProviderStatus;
+  enabled: boolean;
+  configured: boolean;
+  fallbackEligible: boolean;
+  selectedModel: string | null;
+  isDefault: boolean;
+  priority: number;
+  capabilities: string[];
+  models: ModelInfo[];
+  modelsRefreshedAt: string | null;
+  /** Field key -> set / plain value for non-secret fields. */
+  fields: Record<string, { set: boolean; value: string | null }>;
+  lastTestedAt: string | null;
+  lastError: ProviderFailure | null;
+  usage: ProviderUsage;
+  updatedAt: string | null;
+}
