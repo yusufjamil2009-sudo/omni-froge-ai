@@ -168,3 +168,10 @@ export async function updateProjectBuildState(
   const { error } = await client.from("omnifrog_projects").update(update).eq("id", id);
   if (error) throw new Error(error.message);
 }
+
+
+export async function applyProjectFiles(id: string, files: ProjectFile[]): Promise<void> {
+  const client = await db();
+  const { error } = await client.from("omnifrog_projects").update({ files }).eq("id", id);
+  if (error) throw new Error(error.message);
+}
