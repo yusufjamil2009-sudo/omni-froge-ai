@@ -94,6 +94,35 @@ export async function logActivity(
   if (error) throw new Error(error.message);
 }
 
+
+export async function logLiveActivity(input: {
+  projectId: string;
+  level: ActivityLevel;
+  message: string;
+  agentId?: string | null;
+  agentName?: string | null;
+  filePath?: string | null;
+  operation?: string | null;
+  provider?: string | null;
+  model?: string | null;
+  details?: Record<string, JsonValue>;
+}): Promise<void> {
+  const client = await db();
+  const { error } = await client.from("omnifrog_activity").insert({
+    project_id: input.projectId,
+    level: input.level,
+    message: input.message,
+    agent_id: input.agentId ?? null,
+    agent_name: input.agentName ?? null,
+    file_path: input.filePath ?? null,
+    operation: input.operation ?? null,
+    provider: input.provider ?? null,
+    model: input.model ?? null,
+    details: input.details ?? {},
+  });
+  if (error) throw new Error(error.message);
+}
+
 export async function selectProjects(): Promise<ProjectSummary[]> {
   const client = await db();
   const { data, error } = await client
