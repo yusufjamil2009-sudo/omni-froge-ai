@@ -44,13 +44,10 @@ export interface ActivityEvent {
   projectId: string;
   level: ActivityLevel;
   message: string;
-  /** Reserved for PART 07+ agents. */
   agentId: string | null;
   agentName: string | null;
-  /** Reserved for PART 06 coding engine. */
   filePath: string | null;
   operation: string | null;
-  /** Reserved for PART 02/03 provider + model routing. */
   provider: string | null;
   model: string | null;
   details: Record<string, JsonValue>;
@@ -102,7 +99,8 @@ export interface Capability {
 }
 
 export const PENDING_INTEGRATIONS: Capability[] = [
-  { id: "model-router", label: "AI Model Router", status: "pending", note: "Arrives in PART 03" },
+  { id: "model-router", label: "AI Model Router", status: "available", note: "Implemented in PART 03" },
+  { id: "browser-ai", label: "Browser / Open-Source AI First Engine", status: "available", note: "Implemented in PART 04; WebGPU-capable browsers can run the local open-source model first" },
   { id: "coding-engine", label: "Coding Engine", status: "pending", note: "Arrives in PART 06" },
   { id: "agents", label: "Agent Fleet", status: "pending", note: "Arrives in PART 07" },
   { id: "live-preview", label: "Live Preview", status: "pending", note: "Arrives in PART 13" },
@@ -127,7 +125,6 @@ export const PROVIDER_STATUSES = [
 
 export type ProviderStatus = (typeof PROVIDER_STATUSES)[number];
 
-/** Error classes recorded for the PART 03 router. */
 export type ProviderErrorClass =
   | "INVALID_CREDENTIAL"
   | "UNAUTHORIZED"
@@ -142,13 +139,11 @@ export type ProviderErrorClass =
 
 export interface ProviderFailure {
   errorClass: ProviderErrorClass;
-  /** Sanitized reason — never a raw provider payload. */
   reason: string;
   at: string;
   retryAfterSeconds: number | null;
 }
 
-/** Model metadata. Flags are only set from real provider metadata. */
 export interface ModelInfo {
   id: string;
   displayName: string;
@@ -160,7 +155,6 @@ export interface ModelInfo {
   contextNote: string | null;
 }
 
-/** Usage counters, extensible for PART 03+ cost tracking. No invented pricing. */
 export interface ProviderUsage {
   requests?: number;
   inputTokens?: number;
@@ -170,10 +164,6 @@ export interface ProviderUsage {
   lastUsedAt?: string | null;
 }
 
-/**
- * Provider configuration as returned to the owner's UI.
- * Contains NO credential values — only whether each field is set.
- */
 export interface ProviderConfig {
   id: string;
   name: string;
@@ -188,7 +178,6 @@ export interface ProviderConfig {
   capabilities: string[];
   models: ModelInfo[];
   modelsRefreshedAt: string | null;
-  /** Field key -> set / plain value for non-secret fields. */
   fields: Record<string, { set: boolean; value: string | null }>;
   lastTestedAt: string | null;
   lastError: ProviderFailure | null;
