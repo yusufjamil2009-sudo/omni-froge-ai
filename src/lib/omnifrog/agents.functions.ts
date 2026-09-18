@@ -9,6 +9,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { guard } from "../auth.server";
 import { createAgentTask, getAgent, type AgentTask } from "./agents";
+import { executeAgentTask } from "./agent-executor.server";
 
 const inputSchema = z.object({
   projectId: z.string().min(1).max(100),
@@ -33,3 +34,15 @@ export const createAgentTaskFn = createServerFn({ method: "POST" })
 export function isAgentTask(value: unknown): value is AgentTask {
   return typeof value === "object" && value !== null && "agentId" in value && "projectId" in value;
 }
+
+
+export const runAgentTaskFn = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => inputSchema.parse(input))
+  .handler(async ({ data }) => {
+    await guard();
+    const agent = getAgent(data.agentId);
+    if (!agent) throw new Error("Unknown agent.");
+    const task = createAgentTask({ agentId: data.agentId, projectId: data.projectId, instruction: data.instruction });
+    const result = await executeAgentTask({ task });
+    return { ...result, task: { ...task, status: result.ok ? "COMPLETED" as const : "FAILED" as const, output: result.output, error: result.error, updatedAt: new Date().toISOString() } };
+  });
