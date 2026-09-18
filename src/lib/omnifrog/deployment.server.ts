@@ -75,8 +75,8 @@ export async function deployProject(input: {
       if (!env.NETLIFY_AUTH_TOKEN) return { provider: input.provider, status: "ERROR", url: null, deployUrl: null, message: "NETLIFY_AUTH_TOKEN is not configured on the server.", logs: "" };
       cmd = "npx";
       args = ["--yes", "netlify-cli", "deploy", "--dir", publishDir];
-      if (env.NETLIFY_SITE_ID) args.push("--site", env.NETLIFY_SITE_ID);
-      else args.push("--site", safe(input.projectName));
+      if (!env.NETLIFY_SITE_ID) return { provider: input.provider, status: "ERROR", url: null, deployUrl: null, message: "NETLIFY_SITE_ID is not configured on the server.", logs: "" };
+      args.push("--site", env.NETLIFY_SITE_ID);
       if (input.production) args.push("--prod");
       else args.push("--json");
     } else {
