@@ -23,7 +23,18 @@ unless the caller explicitly supplied evidence of those actions. Do not invent s
     prompt: JSON.stringify({ instruction: input.task.instruction, input: input.task.input }),
     system,
     maxTokens: 5000,
-    onProgress: input.onProgress,
+    onProgress: (progress) => {
+      input.onProgress?.(progress);
+      void logLiveActivity({
+        projectId: input.task.projectId,
+        level: "active",
+        message: progress.text || `${agent.name} is working`,
+        agentId: agent.id,
+        agentName: agent.name,
+        operation: "agent.progress",
+        details: { progress: progress.progress },
+      }).catch(() => undefined);
+    },
   });
 
   if (!result.ok || !result.text) {
