@@ -131,7 +131,6 @@ export const runBuildTestRepair = createServerFn({ method: "POST" })
       originalRequest: data.request,
       maxRepairAttempts: data.maxRepairAttempts ?? 3,
     });
-    const projectFiles = applyGeneratedFiles(existing.project.files, changes.filter((c)=>c.operation !== "delete") as never);
     await applyProjectFiles(data.id, result.files.map((file)=>({path:file.path,size:new TextEncoder().encode(file.content).byteLength,updatedAt:new Date().toISOString()})));
     await logLiveActivity({projectId:data.id,level:result.report.passed?"done":"error",message:result.report.passed?"Build pipeline completed successfully":"Build pipeline stopped with unresolved errors",operation:"build.pipeline.complete",details:{errors:result.report.errorCount,warnings:result.report.warningCount,repairs:result.report.repairAttempts}}).catch(()=>undefined);
     return { ok: true as const, report: result.report, source: result.source, fileCount: result.files.length };
