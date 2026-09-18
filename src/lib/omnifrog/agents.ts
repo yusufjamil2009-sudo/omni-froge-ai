@@ -70,6 +70,9 @@ export const AGENTS: readonly AgentDefinition[] = [
   ["integration","Integration Agent","integration","Connects completed modules while respecting existing contracts.",["integration wiring","contract checks","compatibility"],true],
   ["quality","Quality Agent","quality","Checks implementation against project requirements.",["acceptance criteria","consistency","regression risks"],false],
   ["release","Release Agent","release","Prepares a release handoff without deploying.",["release checklist","version notes","handoff state"],false],
+  ["security-audit","Security Audit Agent","security-audit","Performs a deeper security review of project changes.",["threat review","dependency risks","secret exposure checks"],false],
+  ["product","Product Agent","product","Maps user goals into practical product behavior and acceptance criteria.",["feature scope","user flows","acceptance criteria"],false],
+  ["research","Research Agent","research","Gathers supplied technical context and compares implementation options.",["technical research","tradeoff analysis","source constraints"],false],
 ].map(([id,name,role,description,responsibilities,canModifyFiles]) => ({id,name,role:role as AgentRole,description,responsibilities:responsibilities as string[],canModifyFiles}));
 
 export function getAgent(agentId: string): AgentDefinition | null {
