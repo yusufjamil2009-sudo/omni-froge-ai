@@ -6,7 +6,7 @@ import { StatusBadge } from "@/components/omnifrog/status-badge";
 import { Button } from "@/components/ui/button";
 import { projectsQuery } from "@/lib/omnifrog/queries";
 
-export const Route = createFileRoute("/_workspace/projects")({
+export const Route = createFileRoute("/_workspace/projects/")({
   head: () => ({
     meta: [
       { title: "Projects — OmniFrog AI" },
