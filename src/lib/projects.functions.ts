@@ -106,12 +106,30 @@ export const applyCodingPlan = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await guard();
     const { applyGeneratedFiles } = await import("./omnifrog/file-editor.server");
-    const { applyProjectFiles, logActivity, selectProject } = await import("./omnifrog/projects.server");
+    const { applyProjectFiles, logActivity, logLiveActivity, selectProject } = await import("./omnifrog/projects.server");
     const existing = await selectProject(data.id);
     if (!existing) throw new Error("Project not found.");
     const changes = data.changes as never[];
     const files = applyGeneratedFiles(existing.project.files, changes as never);
     await applyProjectFiles(data.id, files);
+    await logLiveActivity({
+      projectId: data.id,
+      level: "done",
+      message: `Applied ${changes.length} validated file operation(s)`,
+      operation: "file.apply",
+      details: { fileCount: files.length, operationCount: changes.length },
+    });
+    for (const change of changes as Array<{ path?: string; operation?: string }>) {
+      if (change.path) {
+        await logLiveActivity({
+          projectId: data.id,
+          level: "done",
+          message: `${change.operation ?? "updated"} ${change.path}`,
+          filePath: change.path,
+          operation: `file.${change.operation ?? "update"}`,
+        });
+      }
+    }
     await logActivity(data.id, [
       { level: "done", message: `Applied ${changes.length} validated file operation(s)`, operation: "file.apply" },
     ]);
