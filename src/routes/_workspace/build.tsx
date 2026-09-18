@@ -1,0 +1,233 @@
+import { useRef, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { ArrowRight, Eraser, Loader2 } from "lucide-react";
+
+import { ActivityPanel } from "@/components/omnifrog/activity-panel";
+import { StatusBadge } from "@/components/omnifrog/status-badge";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { createBuildRequest } from "@/lib/projects.functions";
+import type { ActivityEvent, BuildState } from "@/lib/omnifrog/types";
+import { PENDING_INTEGRATIONS } from "@/lib/omnifrog/types";
+
+export const Route = createFileRoute("/_workspace/build")({
+  head: () => ({
+    meta: [
+      { title: "New Build — OmniFrog AI" },
+      {
+        name: "description",
+        content: "Describe your idea and OmniFrog AI turns it into a software project.",
+      },
+      { property: "og:title", content: "New Build — OmniFrog AI" },
+      { property: "og:description", content: "Start a new OmniFrog AI build request." },
+    ],
+  }),
+  component: BuildScreen,
+});
+
+/** Local, honest record of operations this screen actually performed. */
+function step(
+  id: string,
+  level: ActivityEvent["level"],
+  message: string,
+  operation: string,
+): ActivityEvent {
+  return {
+    id,
+    projectId: "",
+    level,
+    message,
+    agentId: null,
+    agentName: null,
+    filePath: null,
+    operation,
+    provider: null,
+    model: null,
+    details: {},
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function BuildScreen() {
+  const submit = useServerFn(createBuildRequest);
+  const queryClient = useQueryClient();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const [prompt, setPrompt] = useState("");
+  const [state, setState] = useState<BuildState>("IDLE");
+  const [events, setEvents] = useState<ActivityEvent[]>([]);
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const busy = state === "UNDERSTANDING";
+
+  async function runBuildRequest() {
+    const request = prompt.trim();
+    if (request.length < 3 || busy) return;
+
+    setError(null);
+    setProjectId(null);
+    setState("UNDERSTANDING");
+    setEvents([step("received", "done", "Request received", "request.receive")]);
+
+    try {
+      const result = await submit({ data: { request } });
+      if (!result.ok) {
+        setState("FAILED");
+        setError(`${result.error.message} (ref ${result.error.errorId})`);
+        setEvents((current) => [
+          ...current,
+          step("failed", "error", "Could not store the build request", "project.create"),
+        ]);
+        return;
+      }
+
+      setProjectId(result.projectId);
+      setState("PAUSED");
+      setEvents([
+        step("received", "done", "Request received", "request.receive"),
+        step("stored", "done", "Project request stored", "project.create"),
+        step("prepare", "active", "Preparing build environment", "build.prepare"),
+        step(
+          "engine",
+          "pending",
+          "Waiting for AI build engine — not connected yet",
+          "build.engine",
+        ),
+      ]);
+      await queryClient.invalidateQueries({ queryKey: ["omnifrog"] });
+    } catch {
+      setState("FAILED");
+      setError("Could not reach the OmniFrog service. Please try again.");
+    }
+  }
+
+  function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+      event.preventDefault();
+      void runBuildRequest();
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <header className="rise-in">
+        <h1 className="text-2xl font-semibold sm:text-4xl">What do you want to build?</h1>
+        <p className="mt-2 max-w-2xl text-sm text-muted-foreground sm:text-base">
+          Describe your idea. OmniFrog AI will turn it into a software project.
+        </p>
+      </header>
+
+      <section className="glass-panel rounded-2xl p-3 sm:p-5">
+        <Textarea
+          ref={textareaRef}
+          value={prompt}
+          onChange={(event) => setPrompt(event.target.value)}
+          onKeyDown={handleKeyDown}
+          disabled={busy}
+          rows={8}
+          spellCheck={false}
+          placeholder="Describe the website, web app, AI app, tool or software you want to build..."
+          className="max-h-[60vh] min-h-40 w-full resize-y border-0 bg-transparent p-2 text-sm shadow-none focus-visible:ring-0 sm:text-base"
+        />
+
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-3">
+          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+            <span className="font-mono">{prompt.length.toLocaleString()} characters</span>
+            <span className="hidden sm:inline">
+              Enter to build · Shift + Enter for a new line · long multi-section prompts supported
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={busy || prompt.length === 0}
+              onClick={() => {
+                setPrompt("");
+                textareaRef.current?.focus();
+              }}
+            >
+              <Eraser className="size-3.5" /> Clear
+            </Button>
+          </div>
+
+          <Button
+            type="button"
+            onClick={() => void runBuildRequest()}
+            disabled={busy || prompt.trim().length < 3}
+            className="h-11 w-full gradient-primary font-semibold text-primary-foreground glow-primary transition-smooth sm:w-auto"
+          >
+            {busy ? (
+              <>
+                <Loader2 className="size-4 animate-spin" /> Submitting…
+              </>
+            ) : (
+              <>
+                Build with OmniFrog <ArrowRight className="size-4" />
+              </>
+            )}
+          </Button>
+        </div>
+      </section>
+
+      {state !== "IDLE" ? (
+        <section className="space-y-4 rise-in">
+          <div className="soft-panel flex flex-wrap items-center justify-between gap-3 rounded-xl p-4">
+            <div>
+              <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                OmniFrog Build
+              </h2>
+              <p className="mt-1 text-sm font-medium">
+                {state === "FAILED"
+                  ? "Status: Request could not be stored"
+                  : busy
+                    ? "Status: Storing project request…"
+                    : "Status: Preparing project — awaiting AI build engine"}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <StatusBadge status={state} />
+              {projectId ? (
+                <Button asChild variant="secondary" size="sm">
+                  <Link to="/projects/$projectId" params={{ projectId }}>
+                    Open project <ArrowRight className="size-3.5" />
+                  </Link>
+                </Button>
+              ) : null}
+            </div>
+          </div>
+
+          {error ? (
+            <p className="rounded-lg border border-destructive/25 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {error}
+            </p>
+          ) : null}
+
+          <ActivityPanel events={events} title="Build Activity" />
+        </section>
+      ) : null}
+
+      <section className="soft-panel rounded-xl p-4 sm:p-5">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          Capabilities arriving in later parts
+        </h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          These systems are not connected yet, so OmniFrog never presents generated code or AI
+          output it did not actually produce.
+        </p>
+        <ul className="mt-3 flex flex-wrap gap-2">
+          {PENDING_INTEGRATIONS.map((capability) => (
+            <li
+              key={capability.id}
+              className="rounded-full border border-border bg-secondary/60 px-3 py-1 text-xs text-muted-foreground"
+            >
+              {capability.label} · {capability.note}
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
+  );
+}
