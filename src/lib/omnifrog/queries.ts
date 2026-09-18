@@ -1,6 +1,12 @@
 import { queryOptions } from "@tanstack/react-query";
 
+import { getProviders } from "@/lib/providers.functions";
 import { getProject, getRecentActivity, listProjects } from "@/lib/projects.functions";
+
+export const providersQuery = queryOptions({
+  queryKey: ["omnifrog", "providers"],
+  queryFn: () => getProviders(),
+});
 
 export const projectsQuery = queryOptions({
   queryKey: ["omnifrog", "projects"],

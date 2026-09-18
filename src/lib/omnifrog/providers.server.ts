@@ -16,8 +16,14 @@ import type {
   ProviderStatus,
   ProviderUsage,
 } from "./types";
+import type { Json } from "@/integrations/supabase/types";
 
 type Row = Record<string, unknown>;
+
+/** Database jsonb columns require the generated Json shape. */
+function json(value: unknown): Json {
+  return value as unknown as Json;
+}
 
 async function db() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -303,7 +309,7 @@ export async function refreshProviderModels(providerId: string): Promise<ModelRe
   const client = await db();
   const { error } = await client
     .from(TABLE)
-    .update({ models, models_refreshed_at: new Date().toISOString() })
+    .update({ models: json(models), models_refreshed_at: new Date().toISOString() })
     .eq("provider_id", providerId);
   if (error) throw new Error(error.message);
   return { ok: true, models };
@@ -326,7 +332,7 @@ export async function setManualModels(providerId: string, ids: string[]): Promis
   const client = await db();
   const { error } = await client
     .from(TABLE)
-    .update({ models, models_refreshed_at: new Date().toISOString() })
+    .update({ models: json(models), models_refreshed_at: new Date().toISOString() })
     .eq("provider_id", providerId);
   if (error) throw new Error(error.message);
   return { ok: true, models };
@@ -466,8 +472,8 @@ async function writeTestResult(
     .update({
       connection_status: status,
       last_tested_at: testedAt,
-      last_error: failure,
-      usage: nextUsage,
+      last_error: failure ? json(failure) : null,
+      usage: json(nextUsage),
     })
     .eq("provider_id", providerId);
   if (error) throw new Error(error.message);
