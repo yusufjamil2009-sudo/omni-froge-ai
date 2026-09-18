@@ -48,8 +48,9 @@ const SECTIONS: Section[] = [
     id: "github",
     title: "GitHub",
     description: "Repository sync, branches and commits for generated projects.",
-    state: "later",
-    note: "GitHub configuration is available in the API Manager; repository operations arrive in a later part.",
+    state: "active",
+    note: "Connect GitHub, view repositories, and prepare repository sync, commits and pushes.",
+    to: "/settings/github",
   },
   {
     id: "deployment",
