@@ -6,7 +6,7 @@ export interface RuntimeDiagnostic { level: "info" | "warn" | "error"; message: 
 export interface RuntimeManifest { kind: RuntimeKind; entryFile: string | null; htmlFiles: string[]; cssFiles: string[]; jsFiles: string[]; framework: string | null; diagnostics: RuntimeDiagnostic[]; }
 const protectedPath = /(^|\/)(node_modules|\.git|\.env(?:\.|$)|dist|build|coverage)(\/|$)/i;
 export function createRuntimeManifest(files: PreviewSourceFile[]): RuntimeManifest {
- const safe=files.filter(f=>{const p=f.path.replace(/\\/g,"/").replace(/^\.\/+ /,"").trim(); return p&&!protectedPath.test(p)&&!p.split("/").includes("..")&&!/^(?:[A-Za-z]:[\\/]|\/)/.test(p);});
+ const safe=files.filter(f=>{const p=f.path.replace(/\\/g,"/").replace(/^\.\/+/, "").trim(); return p&&!protectedPath.test(p)&&!p.split("/").includes("..")&&!/^(?:[A-Za-z]:[\\/]|\/)/.test(p);});
  const htmlFiles=safe.filter(f=>/\.html?$/i.test(f.path)).map(f=>f.path);
  const cssFiles=safe.filter(f=>/\.css$/i.test(f.path)).map(f=>f.path);
  const jsFiles=safe.filter(f=>/\.(?:js|mjs)$/i.test(f.path)).map(f=>f.path);
