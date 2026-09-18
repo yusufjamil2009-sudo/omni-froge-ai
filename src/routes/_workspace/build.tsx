@@ -8,7 +8,8 @@ import { ActivityPanel } from "@/components/omnifrog/activity-panel";
 import { StatusBadge } from "@/components/omnifrog/status-badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { createBuildRequest } from "@/lib/projects.functions";
+import { createBuildRequest, saveUiBlueprint } from "@/lib/projects.functions";
+import { generateUiBlueprint } from "@/lib/omnifrog/ui-generation";
 import type { ActivityEvent, BuildState } from "@/lib/omnifrog/types";
 import { PENDING_INTEGRATIONS } from "@/lib/omnifrog/types";
 
@@ -52,6 +53,7 @@ function step(
 
 function BuildScreen() {
   const submit = useServerFn(createBuildRequest);
+  const saveBlueprint = useServerFn(saveUiBlueprint);
   const queryClient = useQueryClient();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -61,7 +63,7 @@ function BuildScreen() {
   const [projectId, setProjectId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const busy = state === "UNDERSTANDING";
+  const busy = state === "UNDERSTANDING" || state === "PLANNING";
 
   async function runBuildRequest() {
     const request = prompt.trim();
@@ -85,17 +87,52 @@ function BuildScreen() {
       }
 
       setProjectId(result.projectId);
-      setState("PAUSED");
       setEvents([
         step("received", "done", "Request received", "request.receive"),
         step("stored", "done", "Project request stored", "project.create"),
-        step("prepare", "active", "Preparing build environment", "build.prepare"),
-        step(
-          "engine",
-          "pending",
-          "Waiting for AI build engine — not connected yet",
-          "build.engine",
-        ),
+        step("prepare", "done", "Build environment prepared", "build.prepare"),
+        step("planner", "active", "Generating UI architecture blueprint", "ui.blueprint.generate"),
+      ]);
+      setState("PLANNING");
+
+      const generated = await generateUiBlueprint({
+        request,
+        onProgress: (progress) => {
+          setEvents((current) => [
+            ...current.filter((event) => event.id !== "planner-progress"),
+            step(
+              "planner-progress",
+              "active",
+              progress.text || `Planning UI… ${Math.round(progress.progress * 100)}%`,
+              "ui.blueprint.progress",
+            ),
+          ]);
+        },
+      });
+
+      if (!generated.ok || !generated.blueprint) {
+        setState("FAILED");
+        setError(generated.error ?? "Could not generate a valid UI blueprint.");
+        setEvents((current) => [
+          ...current.filter((event) => event.id !== "planner-progress"),
+          step("planner-failed", "error", "UI blueprint generation failed validation", "ui.blueprint.generate"),
+        ]);
+        return;
+      }
+
+      await saveBlueprint({
+        data: {
+          id: result.projectId,
+          blueprint: generated.blueprint,
+          source: generated.source,
+        },
+      });
+
+      setState("BUILDING");
+      setEvents((current) => [
+        ...current.filter((event) => event.id !== "planner-progress"),
+        step("planner-done", "done", `UI blueprint ready via ${generated.source === "browser" ? "browser AI" : "API fallback"}`, "ui.blueprint.complete"),
+        step("file-engine", "pending", "Waiting for Universal Coding & File Editing Engine (PART 06)", "file.engine"),
       ]);
       await queryClient.invalidateQueries({ queryKey: ["omnifrog"] });
     } catch {
