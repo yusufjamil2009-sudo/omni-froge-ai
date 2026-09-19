@@ -120,8 +120,33 @@ export const runBuildTestRepair = createServerFn({ method: "POST" })
       }
     }
     for (const change of changes) {
-      if (change.operation === "delete") sourceMap.delete(change.path);
-      else sourceMap.set(change.path, change.content);
+      const before = sourceMap.get(change.path) ?? "";
+      if (change.operation === "delete") {
+        await logLiveActivity({
+          projectId: data.id,
+          level: "active",
+          message: `Deleting ${change.path}`,
+          filePath: change.path,
+          operation: "file.delete",
+          details: { before: before.slice(0, 20000), after: "", beforeLines: before ? before.split("\\n").length : 0, afterLines: 0 },
+        }).catch(() => undefined);
+        sourceMap.delete(change.path);
+      } else {
+        await logLiveActivity({
+          projectId: data.id,
+          level: "active",
+          message: `${change.operation === "create" ? "Creating" : "Updating"} ${change.path}`,
+          filePath: change.path,
+          operation: `file.${change.operation}`,
+          details: {
+            before: before.slice(0, 20000),
+            after: change.content.slice(0, 20000),
+            beforeLines: before ? before.split("\\n").length : 0,
+            afterLines: change.content.split("\\n").length,
+          },
+        }).catch(() => undefined);
+        sourceMap.set(change.path, change.content);
+      }
     }
     const sourceFiles = [...sourceMap.entries()].map(([path,content]) => ({path,content}));
     await logLiveActivity({projectId:data.id,level:"active",message:"Build test/debug/repair pipeline started",operation:"build.pipeline.start",details:{fileCount:sourceFiles.length}}).catch(()=>undefined);
@@ -158,14 +183,22 @@ export const applyCodingPlan = createServerFn({ method: "POST" })
       operation: "file.apply",
       details: { fileCount: files.length, operationCount: changes.length },
     });
-    for (const change of changes as Array<{ path?: string; operation?: string }>) {
+    for (const change of changes as Array<{ path?: string; operation?: string; content?: string }>) {
       if (change.path) {
+        const before = existing.project.previewFiles.find((file) => file.path === change.path)?.content ?? "";
+        const after = typeof change.content === "string" ? change.content : "";
         await logLiveActivity({
           projectId: data.id,
           level: "done",
           message: `${change.operation ?? "updated"} ${change.path}`,
           filePath: change.path,
           operation: `file.${change.operation ?? "update"}`,
+          details: {
+            before: before.slice(0, 20000),
+            after: after.slice(0, 20000),
+            beforeLines: before ? before.split("\\n").length : 0,
+            afterLines: after ? after.split("\\n").length : 0,
+          },
         });
       }
     }
