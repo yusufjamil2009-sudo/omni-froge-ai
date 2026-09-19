@@ -116,7 +116,17 @@ export const runBuildTestRepair = createServerFn({ method: "POST" })
     const stored = existing.project.buildState.generatedSourceFiles;
     if (Array.isArray(stored)) {
       for (const item of stored as Array<{path?:string;content?:string}>) {
-        if (item.path && typeof item.content === "string") sourceMap.set(item.path, item.content);
+        if (item.path && typeof item.content === "string") {
+          sourceMap.set(item.path, item.content);
+          await logLiveActivity({
+            projectId: data.id,
+            level: "done",
+            message: `Read existing file ${item.path}`,
+            filePath: item.path,
+            operation: "file.read",
+            details: { bytes: new TextEncoder().encode(item.content).byteLength, lines: item.content.split("\\n").length },
+          }).catch(() => undefined);
+        }
       }
     }
     for (const change of changes) {
