@@ -19,7 +19,7 @@ const fileSchema = z.object({
 
 const planSchema = z.object({
   summary: z.string().min(1).max(1000),
-  files: z.array(fileSchema).max(200),
+  files: z.array(fileSchema).min(1).max(200),
   checks: z.array(z.string().min(1).max(300)).max(100),
 });
 
