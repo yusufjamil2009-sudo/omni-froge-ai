@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowRight, Bot, CheckCircle2, ChevronRight, Eraser, FileCode2, ListChecks, Loader2, MessageSquare, Plan, Send, Sparkles, XCircle } from "lucide-react";
+import { ArrowRight, Bot, Eraser, FileCode2, ListChecks, Loader2, MessageSquare, Send, Sparkles, XCircle } from "lucide-react";
 
 import { BuildProcessConsole } from "@/components/omnifrog/build-process-console";
 import { StatusBadge } from "@/components/omnifrog/status-badge";
@@ -14,7 +14,7 @@ import { generateCodingPlan } from "@/lib/omnifrog/coding-engine";
 import { addProjectMemory, getProjectMemory } from "@/lib/memory.functions";
 import { runParallelAgentsFn } from "@/lib/omnifrog/parallel-agents.functions";
 import { AGENTS } from "@/lib/omnifrog/agents";
-import { runWorkspaceAi } from "@/lib/ai-workspace.functions";
+import { runBrowserFirstAi } from "@/lib/omnifrog/browser-first";
 import { projectQuery } from "@/lib/omnifrog/queries";
 import type { ActivityEvent, BuildState, GeneratedFile } from "@/lib/omnifrog/types";
 
@@ -40,7 +40,6 @@ function BuildScreen() {
   const loadMemory = useServerFn(getProjectMemory);
   const runAgents = useServerFn(runParallelAgentsFn);
   const runPipeline = useServerFn(runBuildTestRepair);
-  const workspaceAi = useServerFn(runWorkspaceAi);
   const queryClient = useQueryClient();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -192,7 +191,7 @@ function BuildScreen() {
     setPrompt("");
     try {
       const context = planText ?? (project.data?.project.request ?? "");
-      const result = await workspaceAi({ data: { mode, message: clean, context } });
+      const result = await runBrowserFirstAi({ prompt: context ? clean + "\\n\\nPROJECT CONTEXT:\\n" + context : clean, system: mode === "plan" ? "You are OmniFrog AI Plan mode. Create a clear implementation plan before coding. Return structured plain text with: Goal, Requirements, Architecture, Files/Modules, Steps, Validation, Risks. Do not claim files were changed or tests were run." : "You are OmniFrog AI Chat mode. Have a helpful software conversation. Do not claim you changed files or ran tests without evidence.", maxTokens: mode === "plan" ? 8000 : 5000 });
       if (!result.ok || !result.text) throw new Error(result.error ?? "AI did not return a response.");
       addMessage({ id: crypto.randomUUID(), role: "assistant", text: result.text, mode, source: result.source });
       if (mode === "plan") {
