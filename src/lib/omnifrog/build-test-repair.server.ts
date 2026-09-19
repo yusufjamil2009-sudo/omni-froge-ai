@@ -87,6 +87,21 @@ export async function testAndRepairProject(input:{
       for(const change of parsed.files as GeneratedFile[]){
         const path=change.path.trim().replace(/\\\\/g,"/").replace(/^\\.\\//,"");
         if(absolutePath.test(path)||path.split("/").includes("..")||protectedPath.test(path))throw new Error(\`Unsafe repair path: \${path}\`);
+        const before = map.get(path) ?? "";
+        await logLiveActivity({
+          projectId: input.projectId,
+          level: "active",
+          message: \`Repairing \${path}\`,
+          filePath: path,
+          operation: \`file.\${change.operation}\`,
+          details: {
+            before: before.slice(0, 20000),
+            after: change.content.slice(0, 20000),
+            beforeLines: before ? before.split("\\n").length : 0,
+            afterLines: change.content.split("\\n").length,
+            repairAttempt: attempt,
+          },
+        }).catch(()=>undefined);
         map.set(path,change.content);
       }
       files=[...map.entries()].map(([path,content])=>({path,content}));
