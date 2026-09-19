@@ -69,6 +69,11 @@ type WebLLMModule = {
 import { DEFAULT_BROWSER_MODEL_ID } from "./browser-models";
 
 const DEFAULT_MODEL_ID = DEFAULT_BROWSER_MODEL_ID;
+const FALLBACK_MODEL_IDS = [
+  DEFAULT_MODEL_ID,
+  "Llama-3.2-1B-Instruct-q4f16_1-MLC",
+  "Llama-3.2-1B-Instruct-q4f32_1-MLC",
+];
 const WEBLLM_URL = "https://esm.sh/@mlc-ai/web-llm@0.2.79";
 
 let runtimePromise: Promise<WebLLMModule> | null = null;
@@ -184,31 +189,46 @@ export async function generateBrowserAi(input: {
   }
 
   try {
-    await loadBrowserAi(input.modelId ?? DEFAULT_MODEL_ID, input.onProgress);
-    const engine = await enginePromise;
-    if (!engine) throw new Error("Browser AI engine is not initialized.");
+    const requested = input.modelId ?? DEFAULT_MODEL_ID;
+    const candidates = [requested, ...FALLBACK_MODEL_IDS.filter((id) => id !== requested)];
+    let lastFailure = "Browser AI generation failed.";
 
-    status = "GENERATING";
-    const result = await engine.chat.completions.create({
-      messages: [
-        ...(input.system
-          ? [{ role: "system" as const, content: input.system }]
-          : []),
-        { role: "user", content: prompt },
-      ],
-      ...(typeof input.temperature === "number" ? { temperature: input.temperature } : {}),
-      ...(typeof input.maxTokens === "number" ? { max_tokens: input.maxTokens } : {}),
-      stream: false,
-    });
+    for (const modelId of candidates) {
+      try {
+        await loadBrowserAi(modelId, input.onProgress);
+        const engine = await enginePromise;
+        if (!engine) throw new Error("Browser AI engine is not initialized.");
 
-    const text = result.choices?.[0]?.message?.content;
-    if (typeof text !== "string" || !text.trim()) {
-      throw new Error("Browser AI returned no usable text.");
+        status = "GENERATING";
+        const result = await engine.chat.completions.create({
+          messages: [
+            ...(input.system
+              ? [{ role: "system" as const, content: input.system }]
+              : []),
+            { role: "user", content: prompt },
+          ],
+          ...(typeof input.temperature === "number" ? { temperature: input.temperature } : {}),
+          ...(typeof input.maxTokens === "number" ? { max_tokens: input.maxTokens } : {}),
+          stream: false,
+        });
+
+        const text = result.choices?.[0]?.message?.content;
+        if (typeof text !== "string" || !text.trim()) {
+          throw new Error("Browser AI returned no usable text.");
+        }
+
+        status = "READY";
+        lastError = null;
+        return { ok: true, text, source: "browser" };
+      } catch (error) {
+        lastFailure = error instanceof Error ? error.message : lastFailure;
+        enginePromise = null;
+        status = "ERROR";
+        lastError = lastFailure;
+      }
     }
 
-    status = "READY";
-    lastError = null;
-    return { ok: true, text, source: "browser" };
+    throw new Error(lastFailure);
   } catch (error) {
     status = "ERROR";
     lastError = error instanceof Error ? error.message : "Browser AI generation failed.";
