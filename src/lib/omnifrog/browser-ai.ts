@@ -74,7 +74,7 @@ const FALLBACK_MODEL_IDS = [
   "Llama-3.2-1B-Instruct-q4f16_1-MLC",
   "Llama-3.2-1B-Instruct-q4f32_1-MLC",
 ];
-const WEBLLM_URL = "https://esm.sh/@mlc-ai/web-llm@0.2.79";
+const WEBLLM_URL = "https://esm.sh/@mlc-ai/web-llm@0.2.82";
 
 let runtimePromise: Promise<WebLLMModule> | null = null;
 let enginePromise: Promise<WebLLMEngine> | null = null;
